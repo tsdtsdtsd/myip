@@ -6,8 +6,6 @@ import (
 	"net"
 	"net/http"
 	"strconv"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
 const defaultPort int = 1323
@@ -32,21 +30,31 @@ func main() {
 
 func handle(w http.ResponseWriter, r *http.Request) {
 
-	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	ip, _, err := net.SplitHostPort(userIP(r))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	userIP := net.ParseIP(ip)
-
 	if userIP == nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	fmt.Fprintf(w, "RemoteAddr: %s\n", r.RemoteAddr)
-        fmt.Fprintf(w, "X-Forwarded-For: %s\n", r.Header.Get("X-Forwarded-For"))
-	fmt.Fprintf(w, "userIP: %s\n", spew.Sdump(userIP))
-	fmt.Fprintf(w, "userIP.String: %s\n", userIP.String())
+	fmt.Fprintf(w, "%s\n", r.RemoteAddr)
+}
+
+func userIP(r *http.Request) string {
+	ip := r.Header.Get("X-Real-Ip")
+	if ip != "" {
+		return ip
+	}
+
+	ip = r.Header.Get("X-Forwarded-For")
+	if ip != "" {
+		return ip
+	}
+
+	return r.RemoteAddr
 }
