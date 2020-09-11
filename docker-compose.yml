@@ -7,8 +7,8 @@ networks:
 services:
   myip:
     build: .
-    #ports: 
-    #  - 8110:1323
+#    ports: 
+#      - 8110:1323
     networks:
       - myip
     labels:

@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net"
 	"net/http"
 	"strconv"
 )
@@ -29,20 +28,7 @@ func main() {
 }
 
 func handle(w http.ResponseWriter, r *http.Request) {
-
-	ip, _, err := net.SplitHostPort(userIP(r))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	userIP := net.ParseIP(ip)
-	if userIP == nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	fmt.Fprintf(w, "%s\n", r.RemoteAddr)
+	fmt.Fprintf(w, "%s\n", userIP(r))
 }
 
 func userIP(r *http.Request) string {
