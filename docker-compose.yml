@@ -1,14 +1,14 @@
 version: '3'
 
-# networks:
-#   myip:
-#     external: true
+networks:
+  myip:
+    external: true
 
 services:
   myip:
     build: .
-    ports: 
-      - 8110:1323
+    #ports: 
+    #  - 8110:1323
     networks:
       - myip
     labels:

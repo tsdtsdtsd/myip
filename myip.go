@@ -46,6 +46,7 @@ func handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, "RemoteAddr: %s\n", r.RemoteAddr)
+        fmt.Fprintf(w, "X-Forwarded-For: %s\n", r.Header.Get("X-Forwarded-For"))
 	fmt.Fprintf(w, "userIP: %s\n", spew.Sdump(userIP))
 	fmt.Fprintf(w, "userIP.String: %s\n", userIP.String())
 }
