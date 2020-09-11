@@ -6,6 +6,8 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 const defaultPort int = 1323
@@ -23,6 +25,8 @@ func main() {
 	port := ":" + strconv.Itoa(flagPort)
 
 	http.HandleFunc("/", handle)
+
+	fmt.Printf("Starting myip service at port %d ...\n", flagPort)
 	http.ListenAndServe(port, nil)
 }
 
@@ -35,10 +39,13 @@ func handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userIP := net.ParseIP(ip)
+
 	if userIP == nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	fmt.Fprintf(w, "%s\n", userIP.String())
+	fmt.Fprintf(w, "RemoteAddr: %s\n", r.RemoteAddr)
+	fmt.Fprintf(w, "userIP: %s\n", spew.Sdump(userIP))
+	fmt.Fprintf(w, "userIP.String: %s\n", userIP.String())
 }
