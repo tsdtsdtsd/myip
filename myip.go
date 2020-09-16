@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-const defaultPort int = 1323
+const defaultPort int = 1325
 
 func main() {
 

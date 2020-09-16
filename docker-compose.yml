@@ -8,7 +8,7 @@ services:
   myip:
     build: .
 #    ports: 
-#      - 8110:1323
+#      - 8110:1325
     networks:
       - myip
     labels:
@@ -22,5 +22,5 @@ services:
       - "traefik.http.routers.myip-secure.tls=true"
       - "traefik.http.routers.myip-secure.tls.certresolver=http"
       - "traefik.http.routers.myip-secure.service=myip"
-      - "traefik.http.services.myip.loadbalancer.server.port=1323"
+      - "traefik.http.services.myip.loadbalancer.server.port=1325"
       - "traefik.docker.network=myip"
