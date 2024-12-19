@@ -7,6 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
+
   test:
     name: Run Go Tests
     runs-on: ubuntu-latest
@@ -25,15 +26,19 @@ jobs:
       - name: Run tests
         run: go test ./... --cover
 
-  build-push-tag:
-    name: Build, Push & Tag
+   version:
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
+    name: Versioning
+    outputs:
+      nextVersion: ${{ steps.version.outputs.nextVersion }}
+      prereleaseVersion: ${{ steps.version.outputs.prereleaseVersion }}
+      dockerNextVersion: ${{ steps.version.outputs.dockerNextVersion }}
+      dockerPrereleaseVersion: ${{ steps.version.outputs.dockerPrereleaseVersion }}
     steps:
       - name: Clone repository
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.workflow_run.head_branch }}
           fetch-depth: 0
 
       - name: Determine next version
@@ -41,6 +46,26 @@ jobs:
         id: nextversion
         with:
           prestable-mode: true
+
+      - name: Set job outputs from nextversion step
+        id: version
+        run: |
+          echo "nextVersion=${{ steps.nextversion.outputs.nextVersion }}" >> "$GITHUB_OUTPUT"
+          echo "prereleaseVersion=${{ steps.nextversion.outputs.prereleaseVersion }}" >> "$GITHUB_OUTPUT"
+          echo "dockerNextVersion=${{ steps.nextversion.outputs.nextVersionStrict }}" >> "$GITHUB_OUTPUT"
+          echo "dockerPrereleaseVersion=$(echo "${{ steps.nextversion.outputs.prereleaseVersionStrict }}" | sed 's/\+/./g')" >> "$GITHUB_OUTPUT"
+
+  build-push:
+    name: Build & Push
+    runs-on: ubuntu-latest
+    needs: [version]
+    permissions:
+      packages: write
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: 'Login to GitHub Container Registry'
         uses: docker/login-action@v3
@@ -53,7 +78,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
-          tags: ghcr.io/tsdtsdtsd/myip:${{ steps.nextversion.outputs.nextVersionStrict }},ghcr.io/tsdtsdtsd/myip:latest
+          tags: ghcr.io/tsdtsdtsd/myip:${{ needs.version.outputs.dockerNextVersion }},ghcr.io/tsdtsdtsd/myip:latest
       
       - name: Create Tag
         run: |
@@ -66,3 +91,38 @@ jobs:
 
           git tag -a -m "${{ steps.nextversion.outputs.nextVersion }}" ${{ steps.nextversion.outputs.nextVersion }}
           git push origin ${{ steps.nextversion.outputs.nextVersion }}
+
+  git-tag-version:
+    runs-on: ubuntu-latest
+    name: Version tag and release
+    needs: [version, build-push]
+    permissions: 
+      actions: write
+      contents: write
+      id-token: write
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Create new version tag
+      run: |
+        git config --global user.name "${GITHUB_ACTOR}"
+        git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+        git tag -a -m "Release ${{ needs.version.outputs.nextVersion }}" ${{ needs.version.outputs.nextVersion }}
+        git push origin ${{ needs.version.outputs.nextVersion }}
+
+    # - name: Create release
+    #   env:
+    #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   run: |
+        
+    #     gh release create ${{ needs.version.outputs.nextVersion }} \
+    #       --latest \
+    #       --generate-notes \
+    #       --verify-tag \
+    #       --target ${{ github.sha }} \
+    #       --title "Release ${{ needs.version.outputs.nextVersion }}"
+
+    #     echo "### Release (production) :earth_americas:" >> "$GITHUB_STEP_SUMMARY"
+    #     echo "Released and deployed ${{ needs.version.outputs.nextVersion }} to production" >> "$GITHUB_STEP_SUMMARY"
