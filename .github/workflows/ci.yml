@@ -1,0 +1,68 @@
+name: Deploy Images to GHCR
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Go Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Run vet
+        run: go vet ./...
+      
+      - name: Run tests
+        run: go test ./... --cover
+
+  build-push-tag:
+    name: Build, Push & Tag
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine next version
+        uses: tsdtsdtsd/nextversion-action@main 
+        id: nextversion
+        with:
+          prestable-mode: true
+
+      - name: 'Login to GitHub Container Registry'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{github.actor}}
+          password: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Build and Push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: tsdtsdtsd/myip:${{ steps.nextversion.outputs.nextVersionStrict }},tsdtsdtsd/myip:latest
+      
+      - name: Create Tag
+        run: |
+          # Set Git user configuration
+          git config --global user.name "${{github.actor}}"
+          git config --global user.email "${{github.actor}}@users.noreply.github.com"
+          
+          # Add shared GitHub Workspace as exception due to CVE-2022-24765
+          git config --global --add safe.directory "${{github.workspace}}"
+
+          git tag -a -m "${{ steps.nextversion.outputs.nextVersion }}" ${{ steps.nextversion.outputs.nextVersion }}
+          git push origin ${{ steps.nextversion.outputs.nextVersion }}
