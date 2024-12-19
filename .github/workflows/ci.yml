@@ -26,8 +26,9 @@ jobs:
         run: go test ./... --cover
 
   version:
-    runs-on: ubuntu-latest
     name: Versioning
+    runs-on: ubuntu-latest
+    needs: [test]
     outputs:
       nextVersion: ${{ steps.version.outputs.nextVersion }}
       prereleaseVersion: ${{ steps.version.outputs.prereleaseVersion }}
@@ -79,18 +80,6 @@ jobs:
           push: true
           tags: ghcr.io/tsdtsdtsd/myip:${{ needs.version.outputs.dockerNextVersion }},ghcr.io/tsdtsdtsd/myip:latest
       
-      - name: Create Tag
-        run: |
-          # Set Git user configuration
-          git config --global user.name "${{github.actor}}"
-          git config --global user.email "${{github.actor}}@users.noreply.github.com"
-          
-          # Add shared GitHub Workspace as exception due to CVE-2022-24765
-          git config --global --add safe.directory "${{github.workspace}}"
-
-          git tag -a -m "${{ steps.nextversion.outputs.nextVersion }}" ${{ steps.nextversion.outputs.nextVersion }}
-          git push origin ${{ steps.nextversion.outputs.nextVersion }}
-
   git-tag-version:
     runs-on: ubuntu-latest
     name: Version tag and release
