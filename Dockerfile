@@ -1,4 +1,4 @@
-FROM golang:latest as builder
+FROM golang:latest AS builder
 
 WORKDIR /build
 COPY . .
@@ -9,4 +9,4 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -v -o myip .
 FROM gcr.io/distroless/static-debian12
 WORKDIR /opt/myip
 COPY --from=builder /build/myip .
-CMD ["./myip"]
+ENTRYPOINT ["./myip"]
