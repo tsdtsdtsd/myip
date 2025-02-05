@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 )
@@ -17,13 +18,13 @@ func main() {
 	initFlags()
 	addr := ":" + flagPort
 
-	fmt.Printf("Starting myip service at port %s ...\n", flagPort)
+	slog.Info("Starting myip service", "port", flagPort)
 
 	http.HandleFunc("/", handle)
 	http.HandleFunc("/json", handleJSON)
 	err := http.ListenAndServe(addr, nil)
 	if err != nil {
-		fmt.Println("failed to start:", err)
+		slog.Error("failed to start", "error", err)
 		os.Exit(1)
 	}
 }
