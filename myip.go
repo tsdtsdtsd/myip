@@ -39,7 +39,7 @@ func initFlags() {
 }
 
 func handle(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "%s", requestIP(r))
+	fmt.Fprint(w, requestIP(r))
 }
 
 func handleJSON(w http.ResponseWriter, r *http.Request) {
